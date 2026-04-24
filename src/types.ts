@@ -14,6 +14,7 @@ export interface AppSettings {
   apiUrl: string
   apiKey: string
   model: string
+  customPrompt: string
 }
 
 declare global {

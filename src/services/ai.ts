@@ -1,9 +1,22 @@
 import type { AppSettings } from '../types'
 
+const DEFAULT_PROMPT = `你是一个歌词格式化助手。你的任务是：
+1. 检查并修正歌词中的错别字和语法错误
+2. 将歌词格式化为一行一句的格式
+3. 去除多余的空行和空格
+4. 保留歌词原有的段落结构（用空行分隔段落）
+5. 不要添加任何时间戳或标记
+6. 不要改变歌词的原意
+7. 只输出格式化后的歌词，不要添加任何解释`
+
 export async function formatLyrics(
   lyrics: string,
   settings: AppSettings
 ): Promise<string> {
+  const systemPrompt = settings.customPrompt?.trim()
+    ? settings.customPrompt.trim()
+    : DEFAULT_PROMPT
+
   const response = await fetch(`${settings.apiUrl}/chat/completions`, {
     method: 'POST',
     headers: {
@@ -13,17 +26,7 @@ export async function formatLyrics(
     body: JSON.stringify({
       model: settings.model,
       messages: [
-        {
-          role: 'system',
-          content: `你是一个歌词格式化助手。你的任务是：
-1. 检查并修正歌词中的错别字和语法错误
-2. 将歌词格式化为一行一句的格式
-3. 去除多余的空行和空格
-4. 保留歌词原有的段落结构（用空行分隔段落）
-5. 不要添加任何时间戳或标记
-6. 不要改变歌词的原意
-7. 只输出格式化后的歌词，不要添加任何解释`,
-        },
+        { role: 'system', content: systemPrompt },
         {
           role: 'user',
           content: `请格式化以下歌词：\n\n${lyrics}`,

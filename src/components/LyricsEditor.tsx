@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef, useCallback } from 'react'
 import type { LyricLine } from '../types'
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
   isFormatting: boolean
   onFormat: () => void
   onApplyFormatted: () => void
+  onLineTextChange: (index: number, text: string) => void
 }
 
 export default function LyricsEditor({
@@ -19,7 +20,26 @@ export default function LyricsEditor({
   isFormatting,
   onFormat,
   onApplyFormatted,
+  onLineTextChange,
 }: Props) {
+  const listRef = useRef<HTMLDivElement>(null)
+  const lineRefs = useRef<(HTMLDivElement | null)[]>([])
+
+  // Auto-scroll to current line
+  useEffect(() => {
+    const el = lineRefs.current[currentLineIndex]
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [currentLineIndex])
+
+  const setLineRef = useCallback(
+    (index: number) => (el: HTMLDivElement | null) => {
+      lineRefs.current[index] = el
+    },
+    []
+  )
+
   return (
     <div className="lyrics-editor">
       <div className="editor-header">
@@ -41,10 +61,11 @@ export default function LyricsEditor({
       </div>
 
       {lyrics.length > 0 ? (
-        <div className="lyrics-tagged">
+        <div className="lyrics-tagged" ref={listRef}>
           {lyrics.map((line, index) => (
             <div
               key={line.id}
+              ref={setLineRef(index)}
               className={`lyric-line ${index === currentLineIndex ? 'active' : ''} ${
                 line.time !== null ? 'tagged' : 'untagged'
               }`}
@@ -56,7 +77,13 @@ export default function LyricsEditor({
                       .padStart(5, '0')}]`
                   : '[  :  .  ]'}
               </span>
-              <span className="lyric-text">{line.text}</span>
+              <input
+                className="lyric-text-input"
+                type="text"
+                value={line.text}
+                onChange={(e) => onLineTextChange(index, e.target.value)}
+                spellCheck={false}
+              />
             </div>
           ))}
         </div>

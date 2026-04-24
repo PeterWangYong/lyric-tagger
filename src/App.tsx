@@ -11,6 +11,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   apiUrl: 'https://api.openai.com/v1',
   apiKey: '',
   model: 'gpt-4o-mini',
+  customPrompt: '',
 }
 
 export default function App() {
@@ -23,7 +24,11 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false)
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = localStorage.getItem('lyric-tagger-settings')
-    return saved ? JSON.parse(saved) : DEFAULT_SETTINGS
+    if (saved) {
+      const parsed = JSON.parse(saved)
+      return { ...DEFAULT_SETTINGS, ...parsed }
+    }
+    return DEFAULT_SETTINGS
   })
 
   const audioRef = useRef<HTMLAudioElement>(null)
@@ -36,7 +41,6 @@ export default function App() {
   // Keyboard handler for spacebar tagging
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger when typing in textarea/input
       if (
         e.target instanceof HTMLTextAreaElement ||
         e.target instanceof HTMLInputElement
@@ -56,7 +60,6 @@ export default function App() {
           return updated
         })
 
-        // Move to next untagged line
         setCurrentIndex((prev) => {
           const next = prev + 1
           if (next < lyrics.length) return next
@@ -64,7 +67,6 @@ export default function App() {
         })
       }
 
-      // Backspace to go back and clear current line's tag
       if (e.code === 'Backspace' && lyrics.length > 0 && currentIndex > 0) {
         if (e.target instanceof HTMLElement && e.target.tagName !== 'TEXTAREA') {
           e.preventDefault()
@@ -116,6 +118,14 @@ export default function App() {
     setCurrentIndex(0)
   }
 
+  const handleLineTextChange = (index: number, text: string) => {
+    setLyrics((prev) => {
+      const updated = [...prev]
+      updated[index] = { ...updated[index], text }
+      return updated
+    })
+  }
+
   const handleExport = async () => {
     const taggedCount = lyrics.filter((l) => l.time !== null).length
     if (taggedCount === 0) {
@@ -153,15 +163,18 @@ export default function App() {
         </div>
       </header>
 
+      <div className="audio-bar">
+        <FileUploader audioFile={audioFile} onFileLoaded={setAudioFile} />
+        <AudioPlayer
+          audioUrl={audioFile?.url ?? null}
+          onTimeUpdate={handleTimeUpdate}
+          audioRef={audioRef}
+        />
+      </div>
+
       <main className="app-main">
-        <div className="left-panel">
-          <FileUploader audioFile={audioFile} onFileLoaded={setAudioFile} />
-          <AudioPlayer
-            audioUrl={audioFile?.url ?? null}
-            onTimeUpdate={handleTimeUpdate}
-            audioRef={audioRef}
-          />
-          {lyrics.length > 0 && (
+        {lyrics.length > 0 && (
+          <div className="left-panel">
             <div className="tagging-info">
               <div className="progress-section">
                 <div className="progress-text">
@@ -191,10 +204,10 @@ export default function App() {
                 </button>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
-        <div className="right-panel">
+        <div className={lyrics.length > 0 ? 'right-panel' : 'right-panel full'}>
           <LyricsEditor
             lyrics={lyrics}
             rawText={rawText}
@@ -203,6 +216,7 @@ export default function App() {
             isFormatting={isFormatting}
             onFormat={handleFormat}
             onApplyFormatted={handleApplyFormatted}
+            onLineTextChange={handleLineTextChange}
           />
         </div>
       </main>
