@@ -32,6 +32,10 @@ export default function App() {
     return DEFAULT_SETTINGS
   })
 
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<number[]>([])
+  const [currentSearchIndex, setCurrentSearchIndex] = useState(0)
+
   const audioRef = useRef<HTMLAudioElement>(null)
   const abortRef = useRef<AbortController | null>(null)
 
@@ -151,6 +155,33 @@ export default function App() {
     }
   }
 
+  // Search logic
+  useEffect(() => {
+    if (!searchQuery.trim() || lyrics.length === 0) {
+      setSearchResults([])
+      setCurrentSearchIndex(0)
+      return
+    }
+    const q = searchQuery.toLowerCase()
+    const matches = lyrics
+      .map((line, i) => (line.text.toLowerCase().includes(q) ? i : -1))
+      .filter((i) => i !== -1)
+    setSearchResults(matches)
+    setCurrentSearchIndex(matches.length > 0 ? 0 : -1)
+  }, [searchQuery, lyrics])
+
+  const handleSearchNav = (direction: 1 | -1) => {
+    if (searchResults.length === 0) return
+    setCurrentSearchIndex((prev) => {
+      const next = (prev + direction + searchResults.length) % searchResults.length
+      setCurrentIndex(searchResults[next])
+      return next
+    })
+  }
+
+  const handleSearchPrev = () => handleSearchNav(-1)
+  const handleSearchNext = () => handleSearchNav(1)
+
   const handleExport = async () => {
     const taggedCount = lyrics.filter((l) => l.time !== null).length
     if (taggedCount === 0) {
@@ -221,10 +252,30 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="current-line-info">
-                当前: {currentIndex + 1} / {lyrics.length} -{' '}
-                {lyrics[currentIndex]?.text || ''}
-              </div>
+              {mode === 'edit' && (
+                <div className="search-box">
+                  <input
+                    className="search-input"
+                    type="text"
+                    placeholder="搜索歌词..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  {searchQuery && (
+                    <span className="search-count">
+                      {searchResults.length > 0
+                        ? `${currentSearchIndex + 1}/${searchResults.length}`
+                        : '无匹配'}
+                    </span>
+                  )}
+                  {searchResults.length > 1 && (
+                    <div className="search-nav">
+                      <button className="btn btn-sm" onClick={handleSearchPrev}>上一个</button>
+                      <button className="btn btn-sm" onClick={handleSearchNext}>下一个</button>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {mode === 'tag' ? (
                 <div className="tagging-hint">
@@ -263,6 +314,7 @@ export default function App() {
             onLineTextChange={handleLineTextChange}
             onLineClick={handleLineClick}
             mode={mode}
+            searchResults={searchResults}
           />
         </div>
       </main>

@@ -15,6 +15,7 @@ interface Props {
   onLineTextChange: (index: number, text: string) => void
   onLineClick: (index: number) => void
   mode: EditorMode
+  searchResults: number[]
 }
 
 export default function LyricsEditor({
@@ -29,6 +30,7 @@ export default function LyricsEditor({
   onLineTextChange,
   onLineClick,
   mode,
+  searchResults,
 }: Props) {
   const listRef = useRef<HTMLDivElement>(null)
   const lineRefs = useRef<(HTMLDivElement | null)[]>([])
@@ -85,7 +87,7 @@ export default function LyricsEditor({
                 ref={setLineRef(index)}
                 className={`lyric-line ${index === currentLineIndex ? 'active' : ''} ${
                   line.time !== null ? 'tagged' : 'untagged'
-                } ${mode === 'tag' ? 'clickable' : ''}`}
+                } ${searchResults.includes(index) ? 'search-match' : ''}`}
                 onClick={() => handleLineClick(index)}
               >
                 <span className="lyric-time">
@@ -95,15 +97,18 @@ export default function LyricsEditor({
                         .padStart(5, '0')}]`
                     : '[  :  .  ]'}
                 </span>
-                <input
-                  ref={(el) => { inputRefs.current[index] = el }}
-                  className="lyric-text-input"
-                  type="text"
-                  value={line.text}
-                  onChange={(e) => onLineTextChange(index, e.target.value)}
-                  readOnly={mode === 'tag'}
-                  spellCheck={false}
-                />
+                {mode === 'tag' ? (
+                  <span className="lyric-text-display">{line.text}</span>
+                ) : (
+                  <input
+                    ref={(el) => { inputRefs.current[index] = el }}
+                    className="lyric-text-input"
+                    type="text"
+                    value={line.text}
+                    onChange={(e) => onLineTextChange(index, e.target.value)}
+                    spellCheck={false}
+                  />
+                )}
               </div>
             ))}
           </div>
