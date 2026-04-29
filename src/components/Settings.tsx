@@ -9,7 +9,10 @@ interface Props {
 }
 
 export default function Settings({ settings, onSettingsChange, onClose }: Props) {
-  const [local, setLocal] = useState({ ...settings })
+  const [local, setLocal] = useState({
+    ...settings,
+    customPrompt: settings.customPrompt?.trim() ? settings.customPrompt : DEFAULT_PROMPT,
+  })
   const [saved, setSaved] = useState(false)
 
   const handleChange = (field: keyof AppSettings, value: string) => {
@@ -67,7 +70,6 @@ export default function Settings({ settings, onSettingsChange, onClose }: Props)
               className="form-textarea"
               value={local.customPrompt}
               onChange={(e) => handleChange('customPrompt', e.target.value)}
-              placeholder={DEFAULT_PROMPT}
               rows={6}
             />
             <small>自定义 AI 格式化歌词时的提示词，可在此基础上增删改</small>
