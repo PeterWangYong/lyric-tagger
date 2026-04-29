@@ -207,6 +207,11 @@ body {
   font-size: 15px;
   padding: 0;
   flex-shrink: 0;
+  outline: none;
+}
+
+.btn:focus {
+  outline: none;
 }
 
 /* Mode Toggle */
