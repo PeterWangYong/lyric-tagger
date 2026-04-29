@@ -130,6 +130,13 @@ export default function App() {
     setCurrentIndex(0)
   }
 
+  const handleChangeLyrics = () => {
+    // Sync rawText from current lyrics before going back
+    setRawText(lyrics.map((l) => l.text).join('\n'))
+    setLyrics([])
+    setCurrentIndex(0)
+  }
+
   const handleLineTextChange = (index: number, text: string) => {
     setLyrics((prev) => {
       const updated = [...prev]
@@ -158,13 +165,6 @@ export default function App() {
     )
     const defaultName = (audioFile?.name || 'lyrics').replace(/\.[^.]+$/, '.lrc')
     await window.electronAPI.saveLrc(lrcContent, defaultName)
-  }
-
-  const handleReset = () => {
-    if (lyrics.length > 0 && !confirm('确定要重置所有打点吗？')) return
-    setLyrics([])
-    setRawText('')
-    setCurrentIndex(0)
   }
 
   const taggedCount = lyrics.filter((l) => l.time !== null).length
@@ -242,8 +242,8 @@ export default function App() {
                 <button className="btn btn-primary" onClick={handleExport}>
                   导出 LRC
                 </button>
-                <button className="btn" onClick={handleReset}>
-                  重置
+                <button className="btn" onClick={handleChangeLyrics}>
+                  更换歌词
                 </button>
               </div>
             </div>
