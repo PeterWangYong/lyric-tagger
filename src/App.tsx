@@ -83,6 +83,14 @@ export default function App() {
             return updated
           })
           setCurrentIndex(newIndex)
+          // Seek to the line before the one we're going back to
+          const seekIndex = newIndex - 1
+          const seekTime = seekIndex >= 0 && lyrics[seekIndex]?.time !== null
+            ? lyrics[seekIndex].time!
+            : 0
+          if (audioRef.current) {
+            audioRef.current.currentTime = seekTime
+          }
         }
       }
     }
@@ -149,9 +157,20 @@ export default function App() {
     })
   }
 
+  // Seek audio to the previous line's timestamp for re-tagging
+  const seekToPrevLine = (targetIndex: number) => {
+    if (!audioRef.current) return
+    const prevIndex = targetIndex - 1
+    const seekTime = prevIndex >= 0 && lyrics[prevIndex]?.time !== null
+      ? lyrics[prevIndex].time!
+      : 0
+    audioRef.current.currentTime = seekTime
+  }
+
   const handleLineClick = (index: number) => {
     if (mode === 'tag') {
       setCurrentIndex(index)
+      seekToPrevLine(index)
     }
   }
 
