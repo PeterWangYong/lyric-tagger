@@ -82,6 +82,7 @@ body {
 
 .file-icon {
   font-size: 20px;
+  filter: grayscale(1) brightness(10);
 }
 
 .file-name {
