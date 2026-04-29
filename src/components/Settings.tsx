@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import type { AppSettings } from '../types'
+import { DEFAULT_PROMPT } from '../services/ai'
 
 interface Props {
   settings: AppSettings
@@ -66,10 +67,10 @@ export default function Settings({ settings, onSettingsChange, onClose }: Props)
               className="form-textarea"
               value={local.customPrompt}
               onChange={(e) => handleChange('customPrompt', e.target.value)}
-              placeholder={`留空使用默认需求：\n- 检查错别字和语法错误\n- 格式化为一行一句\n- 去除多余空行和空格\n- 保留段落结构\n- 不添加时间戳\n- 不改变歌词原意`}
-              rows={5}
+              placeholder={DEFAULT_PROMPT}
+              rows={6}
             />
-            <small>自定义 AI 格式化歌词时的提示词，留空使用默认</small>
+            <small>自定义 AI 格式化歌词时的提示词，可在此基础上增删改</small>
           </div>
           <div className="settings-footer">
             <button className="btn btn-primary" onClick={handleSave}>

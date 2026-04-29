@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react'
 import FileUploader from './components/FileUploader'
 import AudioPlayer from './components/AudioPlayer'
-import LyricsEditor from './components/LyricsEditor'
+import LyricsEditor, { type EditorMode } from './components/LyricsEditor'
 import Settings from './components/Settings'
 import { formatLyrics } from './services/ai'
 import { generateLrc } from './services/lrc'
@@ -22,6 +22,7 @@ export default function App() {
   const [currentTime, setCurrentTime] = useState(0)
   const [isFormatting, setIsFormatting] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [mode, setMode] = useState<EditorMode>('tag')
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = localStorage.getItem('lyric-tagger-settings')
     if (saved) {
@@ -32,13 +33,14 @@ export default function App() {
   })
 
   const audioRef = useRef<HTMLAudioElement>(null)
+  const abortRef = useRef<AbortController | null>(null)
 
   // Save settings to localStorage
   useEffect(() => {
     localStorage.setItem('lyric-tagger-settings', JSON.stringify(settings))
   }, [settings])
 
-  // Keyboard handler for spacebar tagging
+  // Keyboard handler for spacebar tagging (only in tag mode)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
@@ -48,7 +50,7 @@ export default function App() {
         return
       }
 
-      if (e.code === 'Space' && lyrics.length > 0 && audioFile) {
+      if (e.code === 'Space' && lyrics.length > 0 && audioFile && mode === 'tag') {
         e.preventDefault()
 
         const time = audioRef.current?.currentTime ?? 0
@@ -67,7 +69,7 @@ export default function App() {
         })
       }
 
-      if (e.code === 'Backspace' && lyrics.length > 0 && currentIndex > 0) {
+      if (e.code === 'Backspace' && lyrics.length > 0 && currentIndex > 0 && mode === 'tag') {
         if (e.target instanceof HTMLElement && e.target.tagName !== 'TEXTAREA') {
           e.preventDefault()
           const newIndex = currentIndex - 1
@@ -83,7 +85,7 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [lyrics, currentIndex, audioFile])
+  }, [lyrics, currentIndex, audioFile, mode])
 
   const handleTimeUpdate = useCallback((time: number) => {
     setCurrentTime(time)
@@ -92,14 +94,24 @@ export default function App() {
   const handleFormat = async () => {
     if (!rawText.trim()) return
     setIsFormatting(true)
+    abortRef.current = new AbortController()
     try {
-      const formatted = await formatLyrics(rawText, settings)
+      const formatted = await formatLyrics(rawText, settings, abortRef.current.signal)
       setRawText(formatted)
     } catch (err: any) {
-      alert(`格式化失败: ${err.message}`)
+      if (err.name === 'AbortError') {
+        // User cancelled, do nothing
+      } else {
+        alert(`格式化失败: ${err.message}`)
+      }
     } finally {
       setIsFormatting(false)
+      abortRef.current = null
     }
+  }
+
+  const handleCancelFormat = () => {
+    abortRef.current?.abort()
   }
 
   const handleApplyFormatted = () => {
@@ -124,6 +136,12 @@ export default function App() {
       updated[index] = { ...updated[index], text }
       return updated
     })
+  }
+
+  const handleLineClick = (index: number) => {
+    if (mode === 'tag') {
+      setCurrentIndex(index)
+    }
   }
 
   const handleExport = async () => {
@@ -176,6 +194,21 @@ export default function App() {
         {lyrics.length > 0 && (
           <div className="left-panel">
             <div className="tagging-info">
+              <div className="mode-toggle">
+                <button
+                  className={`mode-btn ${mode === 'tag' ? 'active' : ''}`}
+                  onClick={() => setMode('tag')}
+                >
+                  打点模式
+                </button>
+                <button
+                  className={`mode-btn ${mode === 'edit' ? 'active' : ''}`}
+                  onClick={() => setMode('edit')}
+                >
+                  编辑模式
+                </button>
+              </div>
+
               <div className="progress-section">
                 <div className="progress-text">
                   打点进度: {taggedCount} / {lyrics.length}
@@ -187,14 +220,24 @@ export default function App() {
                   />
                 </div>
               </div>
+
               <div className="current-line-info">
                 当前: {currentIndex + 1} / {lyrics.length} -{' '}
                 {lyrics[currentIndex]?.text || ''}
               </div>
-              <div className="tagging-hint">
-                <kbd>Space</kbd> 打点 &nbsp;
-                <kbd>Backspace</kbd> 回退
-              </div>
+
+              {mode === 'tag' ? (
+                <div className="tagging-hint">
+                  <kbd>Space</kbd> 打点 &nbsp;
+                  <kbd>Backspace</kbd> 回退 &nbsp;
+                  点击歌词行选择打点位置
+                </div>
+              ) : (
+                <div className="tagging-hint">
+                  点击歌词行可直接编辑文本内容
+                </div>
+              )}
+
               <div className="action-buttons">
                 <button className="btn btn-primary" onClick={handleExport}>
                   导出 LRC
@@ -215,8 +258,11 @@ export default function App() {
             currentLineIndex={currentIndex}
             isFormatting={isFormatting}
             onFormat={handleFormat}
+            onCancelFormat={handleCancelFormat}
             onApplyFormatted={handleApplyFormatted}
             onLineTextChange={handleLineTextChange}
+            onLineClick={handleLineClick}
+            mode={mode}
           />
         </div>
       </main>

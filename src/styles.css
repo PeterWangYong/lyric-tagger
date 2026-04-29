@@ -58,7 +58,7 @@ body {
   -webkit-app-region: no-drag;
 }
 
-/* Audio Bar - top full width */
+/* Audio Bar */
 .audio-bar {
   display: flex;
   align-items: center;
@@ -209,6 +209,40 @@ body {
   flex-shrink: 0;
 }
 
+/* Mode Toggle */
+.mode-toggle {
+  display: flex;
+  gap: 0;
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.mode-btn {
+  flex: 1;
+  padding: 7px 0;
+  border: none;
+  background: var(--bg);
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.mode-btn:first-child {
+  border-right: 1px solid var(--border);
+}
+
+.mode-btn:hover {
+  color: var(--text);
+}
+
+.mode-btn.active {
+  background: var(--accent);
+  color: white;
+}
+
 /* Tagging Info */
 .tagging-info {
   padding: 16px;
@@ -314,6 +348,16 @@ body {
   color: var(--text-muted);
 }
 
+/* Lyrics tagged container with overlay support */
+.lyrics-tagged-container,
+.lyrics-raw-container {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .lyrics-tagged {
   flex: 1;
   overflow-y: auto;
@@ -341,6 +385,14 @@ body {
 
 .lyric-line.untagged .lyric-time {
   color: var(--untagged);
+}
+
+.lyric-line.clickable {
+  cursor: pointer;
+}
+
+.lyric-line.clickable:hover {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .lyric-time {
@@ -372,6 +424,52 @@ body {
 .lyric-text-input:focus {
   border-color: var(--accent);
   background: var(--bg-secondary);
+}
+
+.lyric-text-input[readonly] {
+  cursor: pointer;
+}
+
+.lyric-text-input[readonly]:focus {
+  border-color: var(--border);
+  background: transparent;
+}
+
+/* Format Overlay */
+.format-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(26, 26, 46, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.format-overlay-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 28px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Settings */

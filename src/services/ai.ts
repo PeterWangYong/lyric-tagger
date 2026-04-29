@@ -1,6 +1,6 @@
 import type { AppSettings } from '../types'
 
-const DEFAULT_PROMPT = `你是一个歌词格式化助手。你的任务是：
+export const DEFAULT_PROMPT = `你是一个歌词格式化助手。你的任务是：
 1. 检查并修正歌词中的错别字和语法错误
 2. 将歌词格式化为一行一句的格式
 3. 去除多余的空行和空格
@@ -11,7 +11,8 @@ const DEFAULT_PROMPT = `你是一个歌词格式化助手。你的任务是：
 
 export async function formatLyrics(
   lyrics: string,
-  settings: AppSettings
+  settings: AppSettings,
+  signal?: AbortSignal
 ): Promise<string> {
   const systemPrompt = settings.customPrompt?.trim()
     ? settings.customPrompt.trim()
@@ -34,6 +35,7 @@ export async function formatLyrics(
       ],
       temperature: 0.3,
     }),
+    signal,
   })
 
   if (!response.ok) {
